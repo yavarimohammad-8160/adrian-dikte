@@ -6,6 +6,8 @@
   <meta name="theme-color" content="#0f766e" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="دیکته آدرین" />
+  <link rel="apple-touch-icon" href="icon.svg" />
+  <link rel="icon" type="image/svg+xml" href="icon.svg" />
   <title>دیکته آدرین</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -50,7 +52,9 @@
       background: linear-gradient(160deg, #14b8a6, #0f766e);
       color: #fff; display: grid; place-items: center;
       font-weight: 900; font-size: 22px; box-shadow: var(--shadow);
+      overflow: hidden;
     }
+    .avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .brand h1 { margin: 0; font-size: 20px; font-weight: 900; }
     .brand p { margin: 2px 0 0; color: var(--muted); font-size: 13px; }
     .stars-pill {
@@ -244,7 +248,7 @@
   <div class="wrap">
     <header class="app">
       <div class="brand">
-        <div class="avatar">آ</div>
+        <div class="avatar"><img src="icon.svg" alt="آدرین" /></div>
         <div>
           <h1>دیکته آدرین</h1>
           <p>کلاس دوم · خواندن و نوشتن</p>
