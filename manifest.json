@@ -1,0 +1,18 @@
+{
+  "name": "دیکته آدرین",
+  "short_name": "دیکته آدرین",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f4efe4",
+  "theme_color": "#0f766e",
+  "lang": "fa",
+  "dir": "rtl",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
