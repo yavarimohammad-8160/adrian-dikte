@@ -1,11 +1,19 @@
-/* fix next-word audio */
+/* letter mask + phonetic fixes */
 (function () {
   var css = document.createElement("style");
-  css.textContent = ".word-mask.listen{font-size:42px;border-style:solid;border-color:#99f6e4;background:#f0fdfa}.word-mask.reveal{font-size:40px;border-style:solid}.word-mask.ok{background:#dcfce7;border-color:#16a34a;color:#166534}.word-mask.bad{background:#ffe4e6;border-color:#e11d48;color:#9f1239}";
+  css.textContent = ".word-mask.listen{font-size:38px;border-style:solid;border-color:#99f6e4;background:#f0fdfa;letter-spacing:3px}.word-mask.reveal{font-size:40px;border-style:solid;letter-spacing:0}.word-mask.ok{background:#dcfce7;border-color:#16a34a;color:#166534}.word-mask.bad{background:#ffe4e6;border-color:#e11d48;color:#9f1239}";
   document.head.appendChild(css);
 
+  var PHONETIC = { "ذرت": "zorrat", "ثریا": "sorayya", "حتی": "hattaa" };
+
   function hasVoice(word) {
-    return typeof VOICE_MAP !== "undefined" && !!VOICE_MAP[word];
+    return !!PHONETIC[word] || (typeof VOICE_MAP !== "undefined" && !!VOICE_MAP[word]);
+  }
+
+  function maskGuess(word) {
+    if (!word || !word.w) return "…";
+    var i = findFocusIndex(word);
+    return word.w.slice(0, i) + "…" + word.w.slice(i + 1);
   }
 
   window.pickQueue = function (n) {
@@ -21,9 +29,7 @@
     return q;
   };
 
-  function audioEl() {
-    return document.getElementById("ttsAudio") || new Audio();
-  }
+  function audioEl() { return document.getElementById("ttsAudio") || new Audio(); }
 
   function primeAudio() {
     try {
@@ -35,13 +41,23 @@
     } catch (e) {}
   }
 
+  function speakPhonetic(text) {
+    try {
+      if (!window.speechSynthesis) return false;
+      window.speechSynthesis.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      u.lang = "en-US";
+      u.rate = 0.78;
+      window.speechSynthesis.speak(u);
+      return true;
+    } catch (e) { return false; }
+  }
+
   window.playClipNow = function (info, slow) {
     return new Promise(function (resolve, reject) {
       var a = audioEl();
       var file = "audio/" + info.f;
-      var start = info.s;
-      var end = info.e;
-      var rate = slow ? 0.55 : 0.72;
+      var start = info.s, end = info.e, rate = slow ? 0.55 : 0.72;
       if (window._clipWatch) { clearTimeout(window._clipWatch); window._clipWatch = null; }
       try { a.pause(); } catch (e) {}
       function tick() {
@@ -52,11 +68,7 @@
       function go() {
         try { a.playbackRate = rate; a.currentTime = start; } catch (e) {}
         var p = a.play();
-        if (p && p.then) {
-          p.then(function () {
-            try { if (Math.abs(a.currentTime - start) > 0.1) a.currentTime = start; } catch (e) {}
-          }).catch(reject);
-        }
+        if (p && p.then) p.then(function () { try { if (Math.abs(a.currentTime - start) > 0.1) a.currentTime = start; } catch (e) {} }).catch(reject);
         window._clipWatch = setTimeout(tick, 40);
       }
       if (String(a.src || "").indexOf(info.f) < 0) {
@@ -64,9 +76,7 @@
         a.oncanplay = function () { a.oncanplay = null; go(); };
         a.onerror = function () { reject(new Error("audio")); };
         a.load();
-      } else {
-        go();
-      }
+      } else go();
     });
   };
 
@@ -75,6 +85,7 @@
     var t = String(text || "").trim();
     if (!t) return;
     if (typeof stopSpeak === "function") stopSpeak();
+    if (PHONETIC[t]) { speakPhonetic(PHONETIC[t]); return; }
     if (typeof VOICE_MAP !== "undefined" && VOICE_MAP[t]) {
       window.playClipNow(VOICE_MAP[t], slow).catch(function () { if (oldSpeak) oldSpeak(t, slow); });
       return;
@@ -99,10 +110,10 @@
     if (state.mode !== "letter" || !state.current) return;
     var hint = document.getElementById("playHint");
     var prompt = document.getElementById("playPrompt");
-    if (hint) hint.textContent = "گوش بده و حرف درست را بزن";
+    if (hint) hint.textContent = "گوش بده و حرف جاافتاده را انتخاب کن";
     if (prompt) {
       prompt.className = "word-mask listen";
-      prompt.textContent = "👂";
+      prompt.textContent = maskGuess(state.current);
       prompt.style.display = "";
     }
   };
@@ -133,9 +144,7 @@
         prompt.textContent = state.current.w;
       }
       showFeed(ok, state.current.w, ok ? "" : builtWord(given));
-    } else {
-      showFeed(ok, expected);
-    }
+    } else showFeed(ok, expected);
     recordLetter(state.current.focus, ok);
     if (ok) {
       state.sessionCorrect += 1;
